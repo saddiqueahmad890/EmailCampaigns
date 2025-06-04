@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\EmailController;
+use App\Http\Controllers\WebhookController;
 
 Route::get('/clear-cache', function (Request $request) {
     Artisan::call('route:clear');
@@ -20,9 +21,7 @@ Route::get('/clear-cache', function (Request $request) {
 
     return response()->json(['success' => true, 'message' => 'Caches cleared successfully.']);
 });
-// Route::get('/', function () {
-//     return view('welcome');
-// });
+
 Route::get('/', [App\Http\Controllers\AdminController::class, 'index'])->name('admindashboard');
 
 Auth::routes();
@@ -79,3 +78,4 @@ Route::get('/campaign/{id}/download-opened-emails', [EmailCampaignController::cl
 Route::get('/campaign/{id}/download-clicked-emails', [EmailCampaignController::class, 'downloadClickedEmails'])->name('campaign.download.clicked');
 Route::get('/campaign/{id}/download-unopened-emails', [EmailCampaignController::class, 'downloadUnopenedEmails'])->name('campaign.download.unopened');
 
+Route::post('/sendgrid/webhook', [WebhookController::class, 'handle']);

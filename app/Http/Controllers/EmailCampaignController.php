@@ -314,15 +314,16 @@ class EmailCampaignController extends Controller
                 if (isset($email['is_opened']) && $email['is_opened']) {
                     $emailOpenCount++;
                 }
-
                 // Add email details to the array
                 $emailDetails[] = [
                     'email' => $email['email'],
                     'sent_date' => $email['sent_at'] ?? '-', // Default to '-' if not sent
-                    'sent_status' => isset($email['sent_at']) && $email['sent_at'] !== null ? '1' : '0',
+                    'sent_status' => isset($email['opened_at']) && $email['opened_at'] !== null ? '1' : '0',
+                    'click_status' => isset($email['is_clicked']) && $email['is_clicked'] ? '1' : '0',
                     'opened_status' => isset($email['is_opened']) && $email['is_opened'] ? '1' : '0',
                 ];
             }
+            // dd($emailDetails); 
             // Attach email statistics and details to the campaign instance temporarily
             $history->email_count = $emailCount;
             $history->email_open_count = $emailOpenCount;
@@ -330,21 +331,7 @@ class EmailCampaignController extends Controller
             $history->failed_emails = $failedEmails;
         }
 
-        // Fetch failed emails from mailer-daemon (optional logic)
-        // $mailerDaemonEmails = $this->fetchMailerDaemonEmails();
-        // foreach ($mailerDaemonEmails as $failedEmail) {
-        //     if (in_array($failedEmail, array_column($emailDetails, 'email'))) {
-        //         $failedEmails[] = $failedEmail;
-        //     }
-        // }
-
-        // Attach email statistics and details to the campaign instance temporarily
-        // $campaign->email_count = $emailCount;
-        // $campaign->email_open_count = $emailOpenCount;
-        // $campaign->email_details = $emailDetails;
-        // $campaign->failed_emails = $failedEmails;
-
-        // Fetch test emails associated with the campaign
+       
         $test_emails = TestEmail::where('email_campaign_id', $id)->get();
 
         // Return the details view with the prepared data
@@ -477,5 +464,62 @@ class EmailCampaignController extends Controller
                 'message' => 'Server error occurred while fetching the campaign.',
             ]);
         }
+    }
+    public function downloadClickedEmails($id)
+    {
+        $campaignHistory = CampaignHistory::find($id);
+        $emails = [];
+
+        $emailDetails = unserialize($campaignHistory->emails);
+        foreach ($emailDetails as $email) {
+            if (isset($email['is_clicked']) && $email['is_clicked']) {
+                $emails[] = ['email' => $email['email']];
+            }
+        }
+
+        return $this->generateCsv($emails, 'cliked_emails.csv');
+    }
+    public function downloadUnopenedEmails($id)
+    {
+        $campaignHistory = CampaignHistory::find($id);
+        $emails = [];
+
+        $emailDetails = unserialize($campaignHistory->emails);
+        dd($emailDetails);
+        foreach ($emailDetails as $email) {
+            if (!isset($email['is_opened']) || !$email['is_opened']) {
+                $emails[] = ['email' => $email['email']];
+            }
+        }
+
+        return $this->generateCsv($emails, 'unopened_emails.csv');
+    }
+    public function downloadSentEmails($id)
+    {
+        $campaignHistory = CampaignHistory::find($id);
+        $emails = [];
+
+        $emailDetails = unserialize($campaignHistory->emails);
+        foreach ($emailDetails as $email) {
+            if (isset($email['sent_at']) && $email['sent_at'] !== null) {
+                $emails[] = ['email' => $email['email']];
+            }
+        }
+
+        return $this->generateCsv($emails, 'sent_emails.csv');
+    }
+    public function downloadOpenedEmails($id)
+    {
+        $campaignHistory = CampaignHistory::find($id);
+        $emails = [];
+
+        $emailDetails = unserialize($campaignHistory->emails);
+        foreach ($emailDetails as $email) {
+            if (isset($email['is_opened']) && $email['is_opened']) {
+                $emails[] = ['email' => $email['email']];
+            }
+        }
+
+        return $this->generateCsv($emails, 'opened_emails.csv');
     }
 }
