@@ -9,6 +9,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class SendBulkEmailJob implements ShouldQueue
 {
@@ -18,37 +19,57 @@ class SendBulkEmailJob implements ShouldQueue
     protected $subject;
     protected $htmlBody;
 
-    public function __construct($email, $subject, $htmlBody) {
-        $this->email = $email;
-        $this->subject = $subject;
-        $this->htmlBody = $htmlBody;
-    }
+    public function __construct(public array $emailData) {}
 
-    public function handle(): void {
+    /**
+     * The number of times the job may be attempted.
+     *
+     * @var int
+     */
+
+    public function handle()
+    {
+        $to = $this->emailData['to'];
+        $cc = $this->emailData['cc'] ?? null;
+        $subject = $this->emailData['subject'];
+        $htmlBody = $this->emailData['htmlBody'];
+        $campaignId = $this->emailData['campaign_id'] ?? null;
+        $trackingId = $this->emailData['tracking_id'] ?? null;
+
+      
         $emailCount = DB::table('email_counts')->where('type', 'sendgrid')->first();
-
         if (!$emailCount || $emailCount->emails_remaining_today <= 0) return;
 
         $sendGridApiKey = env($emailCount->username);
         [$fromEmail, $fromName] = match ($emailCount->username) {
-            'SENDGRID_API_KEY_1' => ['stabilityofpakistaneconomy@gmail.com', 'Demo'],
-            'SENDGRID_API_KEY_2' => ['laraveldev.crisaloid@gmail.com', 'Greengen'],
-            default => ['no-reply@example.com', 'Default Sender']
+            // 'SENDGRID_API_KEY_2' => ['stabilityofpakistaneconomy@gmail.com', 'Demo'],
+            'SENDGRID_API_KEY_2' => ['info.greengen@crm-labloid.com', 'GREENGEN GROUP SRL'],
         };
+
+        $personalization = [
+            'to' => [['email' => $to]],
+            'subject' => $subject,
+        ];
+
+        if (!empty($cc)) {
+            $personalization['cc'] = [['email' => $cc]];
+        }
 
         $response = Http::withToken($sendGridApiKey)
             ->withHeaders(['Content-Type' => 'application/json'])
             ->post('https://api.sendgrid.com/v3/mail/send', [
-                'personalizations' => [[
-                    'to' => [['email' => $this->email]],
-                    'subject' => $this->subject,
-                ]],
+                'personalizations' => [$personalization],
                 'content' => [[
                     'type' => 'text/html',
-                    'value' => $this->htmlBody
+                    'value' => $htmlBody
                 ]],
                 'from' => ['email' => $fromEmail, 'name' => $fromName],
-                'reply_to' => ['email' => $fromEmail, 'name' => $fromName]
+                'reply_to' => ['email' => 'samuele.greengen@gmail.com', 'name' => 'Samuele Greengen'],
+                'custom_args' => [
+                    'campaign_id' => $campaignId,
+                    'recipient_email' => $to,
+                    'tracking_id' => $trackingId
+                ]
             ]);
 
         if ($response->successful()) {
@@ -56,6 +77,12 @@ class SendBulkEmailJob implements ShouldQueue
                 'emails_sent_today' => $emailCount->emails_sent_today + 1,
                 'emails_remaining_today' => $emailCount->emails_remaining_today - 1,
                 'updated_at' => now()
+            ]);
+        } else {
+            Log::error('SendGrid email failed', [
+                'response' => $response->body(),
+                'to' => $to,
+                'cc' => $cc
             ]);
         }
     }
