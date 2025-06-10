@@ -31,7 +31,7 @@
                     <tr>
                         <th>Campaign Nddame</th>
                         <th>Subject Line</th>
-                        <th>No of Email Addresses Reached</th>
+                        <!-- <th>No of Email Addresses Reached</th> -->
                         <th>Date of Sending</th>
                         <th>No of Viewed Emails</th>
                         <th>View Sending Details</th>
@@ -43,7 +43,7 @@
                     <tr>
                         <td>{{ $campaign->campaign_name }}</td>
                         <td>{{ $campaign->subject_line }}</td>
-                        <td>{{ $history->email_count }}</td>
+                        <!-- <td>{{ $history->email_count }}</td> -->
                         <td>{{ $history->date_sent ? $history->date_sent : "-" }}</td>
                         <td>{{ $history->email_open_count }}</td>
                         <td>
