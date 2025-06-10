@@ -20,12 +20,7 @@ class SendBulkEmailJob implements ShouldQueue
     protected $htmlBody;
 
     public function __construct(public array $emailData) {}
-
-    /**
-     * The number of times the job may be attempted.
-     *
-     * @var int
-     */
+  
 
     public function handle()
     {
@@ -43,7 +38,9 @@ class SendBulkEmailJob implements ShouldQueue
         $sendGridApiKey = env($emailCount->username);
         [$fromEmail, $fromName] = match ($emailCount->username) {
             // 'SENDGRID_API_KEY_2' => ['stabilityofpakistaneconomy@gmail.com', 'Demo'],
-            'SENDGRID_API_KEY_2' => ['info.greengen@crm-labloid.com', 'GREENGEN GROUP SRL'],
+            'SENDGRID_API_KEY_2' => ['hamzakhanbangash08@gmail.com', 'Demoapii'],
+            // 'SENDGRID_API_KEY_2' => ['info.greengen@crm-labloid.com', 'GREENGEN GROUP SRL'],
+
         };
 
         $personalization = [

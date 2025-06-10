@@ -12,7 +12,16 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\WebhookController;
 
-Route::get('/clear-cache', function (Request $request) {
+
+
+// Route::get('/', [App\Http\Controllers\AdminController::class, 'index'])->name('admindashboard');
+Route::get('/', function () {
+    return redirect('/campaign');
+});
+
+
+
+Route::get('/clear', function (Request $request) {
     Artisan::call('route:clear');
     Artisan::call('config:clear');
     Artisan::call('cache:clear');
@@ -21,9 +30,6 @@ Route::get('/clear-cache', function (Request $request) {
 
     return response()->json(['success' => true, 'message' => 'Caches cleared successfully.']);
 });
-
-Route::get('/', [App\Http\Controllers\AdminController::class, 'index'])->name('admindashboard');
-
 Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
