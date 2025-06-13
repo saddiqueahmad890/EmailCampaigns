@@ -5,7 +5,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Models\CampaignHistory;
-use Illuminate\Support\Facades\Response;
 use Carbon\Carbon;
 
 class WebhookController extends Controller
@@ -13,26 +12,6 @@ class WebhookController extends Controller
     public function handle(Request $request)
     {
         $events = $request->all();
-
- $signature = $request->header('X-Twilio-Email-Event-Webhook-Signature');
-    $timestamp = $request->header('X-Twilio-Email-Event-Webhook-Timestamp');
-    $payload = $request->getContent();
-
-    if (!$signature || !$timestamp) {
-        Log::error('Missing signature or timestamp');
-        return Response::json(['error' => 'Unauthorized'], 401);
-    }
-
-    if (!$this->verifySignature($payload, $timestamp, $signature)) {
-        Log::error('Invalid SendGrid webhook signature');
-        return Response::json(['error' => 'Invalid Signature'], 401);
-    }
-
-    Log::info('Verified SendGrid Webhook');
-
-
-
-
 
         Log::info('Webhook payload:', $request->all());
 
@@ -116,28 +95,6 @@ class WebhookController extends Controller
 
     return response()->json(['status' => 'ok']);
     }
-
-
-    private function verifySignature(string $payload, string $timestamp, string $signature): bool
-{
-    $publicKeyBase64 = 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE3jqwcA6q7yjKBeElCIMRZvOX+dTcEUPL0n/ipgPh79DitHFnd0O5qoxn1ZcELcTnYlQBTNK9l7ri/YDXz5AvSg==';
-
-    try {
-        $publicKey = base64_decode($publicKeyBase64);
-        $message = $timestamp . $payload;
-        $decodedSignature = base64_decode($signature);
-
-        if (!function_exists('sodium_crypto_sign_verify_detached')) {
-            throw new \RuntimeException('Sodium extension not enabled');
-        }
-
-        return sodium_crypto_sign_verify_detached($decodedSignature, $message, $publicKey);
-    } catch (\Throwable $e) {
-        Log::error('Signature verification error: ' . $e->getMessage());
-        return false;
-    }
-}
-
 
 
 }
